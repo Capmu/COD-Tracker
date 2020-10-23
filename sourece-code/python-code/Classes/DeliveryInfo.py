@@ -1,15 +1,20 @@
 class DeliveryInfo:
 
     #General attributes
+    sendingDate = "<DEFAULT-SENDING-DATE>"
     deliveryCode = "DEFAULT-DELIVERY-CODE"
     expectedCOD = 0
     actualCOD = 0
 
     #Dinamic attribute
-    customerInfoDict = {}
+    customerInfoColumnNumberDict = {}
+    customerInfoValueDict = {}
 
-    def setCustomerInfoDict(self, customerInfoDict):
-        self.customerInfoDict = customerInfoDict
+    def setCustomerInfoColumnNumberDict(self, columnNumberDict):
+        self.customerInfoColumnNumberDict = columnNumberDict
+    
+    def setCustomerInfoValueDict(self, valueDict):
+        self.customerInfoValueDict = valueDict
 
     def checkStatus(self):
         if self.expectedCOD == self.actualCOD:
