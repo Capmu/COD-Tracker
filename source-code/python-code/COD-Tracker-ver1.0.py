@@ -18,12 +18,22 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import PatternFill
 from shutil import copyfile, move
 import datetime
+import time
 
 #--------------------------------------------------------
 # Fucntions
 #--------------------------------------------------------
-def logInfo():
-    print("")
+def logInfo(situation):
+    if situation == "intro":
+        print("")
+    if situation == "outro":
+        print("-----------------------------------------")
+        print("                 Success                 ")
+        print("-----------------------------------------")
+
+        time.sleep(300)
+
+    return()
 
 def Number_of_cell_alphabet(alphabetNumber):
 
@@ -228,6 +238,8 @@ def getPaymentList(paymentReceivingDict):
     remainingReceivingDict = []
     invalidPaidList = []
 
+    print(len(paymentReceivingDict))
+
     for sending in sendingDatabase:
 
         if sending.deliveryCode in paymentReceivingDict:
@@ -287,6 +299,11 @@ def createRemainingReceivingFile():
     for i in range(len(remainingReceivingDict)):
         reportRecorder[Number_of_cell_alphabet(columnNumberDeliveryCode_sending + 1) + str(i + 2)] = list(remainingReceivingDict)[i]
         reportRecorder[Number_of_cell_alphabet(columnNumberExpectedCOD + 1) + str(i + 2)] = remainingReceivingDict[list(remainingReceivingDict)[i]]
+    #===================================================================================================================================
+    # Unique Statement
+    #===================================================================================================================================
+    reportRecorder[Number_of_cell_alphabet(4) + str(len(remainingReceivingDict) + 2)] = "COD-Tracker"
+    #===================================================================================================================================
 
     reportWorkbook.save(remainReceivingFilePath)
 
@@ -359,7 +376,7 @@ columnBias = -1 #from summary cash.
 #--------------------------------------------------------
 # Implementation
 #--------------------------------------------------------
-logInfo()
+logInfo("intro")
 sendings = getSendingInfo(excelProductSendingPath, columnBias)
 receivingDict = getReceivingInfo()
 updateReport()
@@ -367,3 +384,4 @@ sendingDatabase = getSendingInfo(reportFolder, 0) #re-use this function, so have
 paidList, nonPaidList, remainingReceivingDict = getPaymentList(receivingDict)
 trackCOD()
 moveUsedFiles()
+logInfo("outro")
