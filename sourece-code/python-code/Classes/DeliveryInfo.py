@@ -1,8 +1,6 @@
 class DeliveryInfo:
 
     #General attributes
-    sendingDate = "<DEFAULT-SENDING-DATE>"
-    receivingDate = "<DEFAULT-RECEIVING-DATE>"
     deliveryCode = "DEFAULT-DELIVERY-CODE"
     expectedCOD = 0
     actualCOD = 0
