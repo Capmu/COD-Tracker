@@ -22,7 +22,7 @@ import datetime
 #--------------------------------------------------------
 # Fucntions
 #--------------------------------------------------------
-def displayIntroduction():
+def logInfo():
     print("")
 
 def Number_of_cell_alphabet(alphabetNumber):
@@ -182,10 +182,10 @@ def initialReportFile():
 
     return()
 
-def appendSendingInfo():
+def appendSendingInfo(path, sendings):
     
-    reader = readExcelAtSheet(excelReportPath, 0)
-    reportWorkbook = load_workbook(excelReportPath)      #for [openpyxl] libraly
+    reader = readExcelAtSheet(path, 0)
+    reportWorkbook = load_workbook(path)      #for [openpyxl] libraly
     reportRecorder = reportWorkbook.active
 
     startRow = len(reader.col_values(0)) + 1 #for "OpenPyXl" format
@@ -200,7 +200,7 @@ def appendSendingInfo():
             for columnName in listOfAdditionalColumnName:
                 reportRecorder[Number_of_cell_alphabet(additionalInfoColumnNumberDict[columnName] + 1) + str(startRow + i)] = sendings[i].customerInfoDict[columnName]
 
-    reportWorkbook.save(excelReportPath)
+    reportWorkbook.save(path)
 
     return()
 
@@ -217,19 +217,18 @@ def updateReport():
         print(" -> Created report file.\n")
         print(readyMessage)
 
-    appendSendingInfo()
+    appendSendingInfo(excelReportPath, sendings)
     
     return()
 
 def getPaymentList(paymentReceivingDict):
     
-    paymentSendingDatabase = sendingDatabase.copy()
-
     paidList = []
     nonPaidList = []
+    remainingReceivingDict = []
     invalidPaidList = []
 
-    for sending in paymentSendingDatabase:
+    for sending in sendingDatabase:
 
         if sending.deliveryCode in paymentReceivingDict:
 
@@ -242,18 +241,20 @@ def getPaymentList(paymentReceivingDict):
             elif sending.status == "invalid-COD":
                 invalidPaidList.append(sending)
             
+            paymentReceivingDict.pop(sending.deliveryCode)
+        
         else:
             nonPaidList.append(sending)
 
-    #nonPaidList = paymentSendingDatabase #remain only non-paid customer.
+    remainingReceivingDict = paymentReceivingDict
 
     #inform invalid payment
     if len(invalidPaidList) > 0:
         displayInvalidPayment(invalidPaidList)
 
-    return(paidList, nonPaidList)
+    return(paidList, nonPaidList, remainingReceivingDict)
 
-def highLight():
+def trackCOD():
 
     reportWorkbook = load_workbook(excelReportPath)      #for [openpyxl] libraly
     reportRecorder = reportWorkbook.active
@@ -276,16 +277,34 @@ def highLight():
 
     return()
 
-def moveUsedFiles():
+def createRemainingReceivingFile():
     
+    copyfile(reportTemplatePath, remainReceivingFilePath)
+
+    reportWorkbook = load_workbook(remainReceivingFilePath)      #for [openpyxl] libraly
+    reportRecorder = reportWorkbook.active
+
+    for i in range(len(remainingReceivingDict)):
+        reportRecorder[Number_of_cell_alphabet(columnNumberDeliveryCode_sending + 1) + str(i + 2)] = list(remainingReceivingDict)[i]
+        reportRecorder[Number_of_cell_alphabet(columnNumberExpectedCOD + 1) + str(i + 2)] = remainingReceivingDict[list(remainingReceivingDict)[i]]
+
+    reportWorkbook.save(remainReceivingFilePath)
+
+    return()
+
+def moveUsedFiles():
+
     sendingFiles = getAllFileNameAtPath(excelProductSendingPath)
-    # receivingFiles = getAllFileNameAtPath(excelProductReceivedPath)
+    receivingFiles = getAllFileNameAtPath(excelProductReceivedPath)
     
     for sendingFile in sendingFiles:
         move(excelProductSendingPath + "/" + sendingFile, excelBackup_ProductSendingPath + "/" + sendingFile)
     
-    # for receivingFile in receivingFiles:
-    #     move(excelProductReceivedPath + "/" + receivingFile, excelBackup_ProductReceivedPath + "/" + receivingFile)
+    for receivingFile in receivingFiles:
+        move(excelProductReceivedPath + "/" + receivingFile, excelBackup_ProductReceivedPath + "/" + receivingFile)
+
+    if len(remainingReceivingDict) > 0:
+        createRemainingReceivingFile()
 
     print(" -> moved file.\n")
 
@@ -295,15 +314,19 @@ def moveUsedFiles():
 # Variables
 #--------------------------------------------------------
 reportName = "เช็คยอด-COD.xlsx"
+summaryReportName = "เช็คยอด-COD-(สรุป).xlsx"
 reportFolder = "3. ไฟล์เช็คยอด/"
 
 excelProductSendingPath = "1. ไฟล์วันที่-ส่งของ"
 excelProductReceivedPath = "2. ไฟล์วันที่-ลูกค้ารับของ"
 excelReportPath = reportFolder + reportName
+excelSummaryReportPath = reportFolder + "สรุป/" + summaryReportName
 
 excelBackup_ProductSendingPath = "source-code/ประวัติการดำเนินการ/1. ไฟล์วันที่-ส่งของ (Backup)"
 excelBackup_ProductReceivedPath = "source-code/ประวัติการดำเนินการ/2. ไฟล์วันที่-ลูกค้ารับของ (Backup)"
 reportTemplatePath = "source-code/python-code/support-files/เช็คยอด-COD.xlsx"
+
+remainReceivingFilePath = excelProductReceivedPath + "/คงเหลือ.xlsx"
 
 lightGreen_fill = PatternFill(start_color='d3ffd1', end_color='d3ffd1', fill_type='solid')
 lightRed_fill = PatternFill(start_color='ffd6d6', end_color='ffd6d6', fill_type='solid')
@@ -336,11 +359,11 @@ columnBias = -1 #from summary cash.
 #--------------------------------------------------------
 # Implementation
 #--------------------------------------------------------
-displayIntroduction()
+logInfo()
 sendings = getSendingInfo(excelProductSendingPath, columnBias)
 receivingDict = getReceivingInfo()
 updateReport()
 sendingDatabase = getSendingInfo(reportFolder, 0) #re-use this function, so have some wired structure.
-getPaymentList(receivingDict)
-highLight()
+paidList, nonPaidList, remainingReceivingDict = getPaymentList(receivingDict)
+trackCOD()
 moveUsedFiles()
