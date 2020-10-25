@@ -4,8 +4,8 @@
     developer : Capmu
 
     Unique Statement
-        - line(138) : Convert float to date.
-        - line(306) : Add footer.
+        - line(139) : Convert float to date.
+        - line(307) : Add footer.
 '''
 
 #--------------------------------------------------------
@@ -124,12 +124,21 @@ def getSendingInfo(path, bias):
     excelFiles = getAllFileNameAtPath(path)
     sendings = []
     
-    print(" -> Loaded file.")
     for excelFile in excelFiles:
+
+        biasForThisFile = bias
         
         reader = readExcelAtSheet(path + "/" + excelFile, 0)
+
+        #=======================================================================================================================================
+        # Unique Statement
+        #=======================================================================================================================================
+        if str(reader.col_values(columnNumberDeliveryCode_sending)[len(reader.col_values(columnNumberDeliveryCode_sending)) - 1 ]) != "":
+            biasForThisFile = 0
+        #=======================================================================================================================================
         
-        for i in range(len(reader.col_values(0)) - 1 + bias):
+        for i in range(len(reader.col_values(0)) - 1 + biasForThisFile):
+
             #pull informations from excel to python list
             sending = DeliveryInfo()
 
@@ -149,16 +158,10 @@ def getSendingInfo(path, bias):
                     sending.customerInfoDict[columnName] = reader.col_values(additionalInfoColumnNumberDict[columnName])[i + 1]
             
             sendings.append(sending)
-    
-        print("     ", str(excelFile))
-        
-    print("")
 
     return(sendings)
 
 def getReceivingInfo():
-
-    print(" -> Loaded receiving file.")
 
     excelFiles = getAllFileNameAtPath(excelProductReceivedPath)
     receivingDict = {}
@@ -170,10 +173,6 @@ def getReceivingInfo():
         for i in range(len(reader.col_values(0)) - 1 + columnBias):
             #pull using informations from excel to python list (Only DeliveryCode and it's COD)
             receivingDict[str(reader.col_values(columnNumberDeliveryCode_receiving)[i + 1])] = reader.col_values(columnNumberActualCOD)[i + 1]
-        
-        print("     ", str(excelFile))
-        
-    print("")
 
     return(receivingDict)
 
@@ -193,11 +192,11 @@ def initialReportFile():
 
     return()
 
-def appendSendingInfo(path, sendings):
-    
+def appendSendingInfo(path, sendings, sheetName):
+
     reader = readExcelAtSheet(path, 0)
     reportWorkbook = load_workbook(path)      #for [openpyxl] libraly
-    reportRecorder = reportWorkbook.active
+    reportRecorder = reportWorkbook[sheetName]
 
     startRow = len(reader.col_values(0)) + 1 #for "OpenPyXl" format
 
@@ -217,7 +216,7 @@ def appendSendingInfo(path, sendings):
 
 def updateReport():
 
-    readyMessage = " -> Ready to check.\n"
+    readyMessage = " -> This program is working . . .\n"
 
     #check if need to create the report file.
     if os.path.exists(excelReportPath):
@@ -228,7 +227,7 @@ def updateReport():
         print(" -> Created report file.\n")
         print(readyMessage)
 
-    appendSendingInfo(excelReportPath, sendings)
+    appendSendingInfo(excelReportPath, sendings, databaseSheetName)
     
     return()
 
@@ -238,8 +237,6 @@ def getPaymentList(paymentReceivingDict):
     nonPaidList = []
     remainingReceivingDict = []
     invalidPaidList = []
-
-    print(len(paymentReceivingDict))
 
     for sending in sendingDatabase:
 
@@ -286,7 +283,7 @@ def trackCOD():
 
     reportWorkbook.save(excelReportPath)
 
-    print(" -> marked.\n")
+    print(" -> checked.\n")
 
     return()
 
@@ -301,7 +298,7 @@ def createRemainingReceivingFile():
         reportRecorder[Number_of_cell_alphabet(columnNumberDeliveryCode_sending + 1) + str(i + 2)] = list(remainingReceivingDict)[i]
         reportRecorder[Number_of_cell_alphabet(columnNumberExpectedCOD + 1) + str(i + 2)] = remainingReceivingDict[list(remainingReceivingDict)[i]]
     #===================================================================================================================================
-    # Unique Statement
+    # Unique Statement | use for add 1 row to make structure like receiving files.
     #===================================================================================================================================
     reportRecorder[Number_of_cell_alphabet(4) + str(len(remainingReceivingDict) + 2)] = "COD-Tracker"
     #===================================================================================================================================
@@ -324,27 +321,25 @@ def moveUsedFiles():
     if len(remainingReceivingDict) > 0:
         createRemainingReceivingFile()
 
-    print(" -> moved file.\n")
-
     return()
 
 #--------------------------------------------------------
 # Variables
 #--------------------------------------------------------
 reportName = "เช็คยอด-COD.xlsx"
-summaryReportName = "เช็คยอด-COD-(สรุป).xlsx"
 reportFolder = "3. ไฟล์เช็คยอด/"
 
 excelProductSendingPath = "1. ไฟล์วันที่-ส่งของ"
 excelProductReceivedPath = "2. ไฟล์วันที่-ลูกค้ารับของ"
 excelReportPath = reportFolder + reportName
-excelSummaryReportPath = reportFolder + "สรุป/" + summaryReportName
 
 excelBackup_ProductSendingPath = "source-code/ประวัติการดำเนินการ/1. ไฟล์วันที่-ส่งของ (Backup)"
 excelBackup_ProductReceivedPath = "source-code/ประวัติการดำเนินการ/2. ไฟล์วันที่-ลูกค้ารับของ (Backup)"
 reportTemplatePath = "source-code/python-code/support-files/เช็คยอด-COD.xlsx"
 
 remainReceivingFilePath = excelProductReceivedPath + "/คงเหลือ.xlsx"
+
+databaseSheetName = "รวม"
 
 lightGreen_fill = PatternFill(start_color='d3ffd1', end_color='d3ffd1', fill_type='solid')
 lightRed_fill = PatternFill(start_color='ffd6d6', end_color='ffd6d6', fill_type='solid')
@@ -373,7 +368,7 @@ additionalInfoValueDict = {
     listOfAdditionalColumnName[0] : "default-value"
 }
 
-columnBias = -1 #from summary cash.
+columnBias = -1 #from summary cash (excel structure).
 #--------------------------------------------------------
 # Implementation
 #--------------------------------------------------------
