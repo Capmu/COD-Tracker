@@ -350,19 +350,19 @@ lightRed_fill = PatternFill(start_color='ffd6d6', end_color='ffd6d6', fill_type=
 
 # Column Settings for sending files.
 columnNumberSendingDate = 0
-columnNumberDeliveryCode_sending = 1
-columnNumberExpectedCOD = 3
+columnNumberDeliveryCode_sending = 2
+columnNumberExpectedCOD = 16
 
 # Column Settings for receiving files.
-columnNumberDeliveryCode_receiving = 1
-columnNumberActualCOD = 3
+columnNumberDeliveryCode_receiving = 2
+columnNumberActualCOD = 6
 
 # Addition Infomation : up to each project.
 
 listOfAdditionalColumnName = ["customerName"]
 
 additionalInfoColumnNumberDict = {
-    listOfAdditionalColumnName[0] : 2
+    listOfAdditionalColumnName[0] : 3
 }
 additionalInfoValueDict = {
     listOfAdditionalColumnName[0] : "default-value"
