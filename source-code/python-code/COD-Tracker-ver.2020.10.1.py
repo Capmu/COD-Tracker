@@ -103,7 +103,7 @@ def displayInvalidPayment(invalidPayments):
     print("-----------------------------------------")
 
     for showInfo in invalidPayments:
-        print(showInfo.sendingDate, "   ", showInfo.deliveryCode)
+        print(showInfo.sendingDate, "   ", showInfo.deliveryCode, "   |   Expected: ", showInfo.expectedCOD, "   ", "Actual: ", showInfo.actualCOD)
     
     print("-----------------------------------------\n")
 
@@ -129,34 +129,39 @@ def getSendingInfo(path, bias):
         biasForThisFile = bias
         
         reader = readExcelAtSheet(path + "/" + excelFile, 0)
-
-        #=======================================================================================================================================
-        # Unique Statement
-        #=======================================================================================================================================
-        if str(reader.col_values(columnNumberDeliveryCode_sending)[len(reader.col_values(columnNumberDeliveryCode_sending)) - 1 ]) != "":
-            biasForThisFile = 0
-        #=======================================================================================================================================
         
         for i in range(len(reader.col_values(0)) - 1 + biasForThisFile):
 
             #pull informations from excel to python list
             sending = DeliveryInfo()
-
-            #=======================================================================================================================================
-            # Unique Statement
-            #=======================================================================================================================================
-            sending.sendingDate = datetime.datetime.utcfromtimestamp(((reader.col_values(columnNumberSendingDate)[i + 1]) - 25569) * 86400.0).date()
-            #=======================================================================================================================================
-            sending.deliveryCode = str(reader.col_values(columnNumberDeliveryCode_sending)[i + 1])
-            sending.expectedCOD = reader.col_values(columnNumberExpectedCOD)[i + 1]
+            
+            #============================================================================================
+            # Unique Statement | bias = 0 means use Old format excel column topic. must be manual adjust
+            #============================================================================================
+            if biasForThisFile == -1:
+                sending.sendingDate = str(reader.col_values(columnNumberSendingDate)[i + 1])
+                sending.deliveryCode = str(reader.col_values(columnNumberDeliveryCode_sending)[i + 1])
+                sending.expectedCOD = reader.col_values(columnNumberExpectedCOD)[i + 1]
+            elif biasForThisFile == 0:
+                sending.sendingDate = str(reader.col_values(0)[i + 1])
+                sending.deliveryCode = str(reader.col_values(1)[i + 1])
+                sending.expectedCOD = reader.col_values(3)[i + 1]
+            #============================================================================================
 
             if len(listOfAdditionalColumnName) > 0:
 
                 sending.setCustomerInfoDict(additionalInfoValueDict.copy())
 
                 for columnName in listOfAdditionalColumnName:
-                    sending.customerInfoDict[columnName] = reader.col_values(additionalInfoColumnNumberDict[columnName])[i + 1]
-            
+                    #===============================================================================================================
+                    # Unique Statement | bias = 0 means use Old format excel column topic. must be manual adjust
+                    #===============================================================================================================
+                    if biasForThisFile == -1:
+                        sending.customerInfoDict[columnName] = reader.col_values(additionalInfoColumnNumberDict[columnName])[i + 1]
+                    elif biasForThisFile == 0:
+                        sending.customerInfoDict[columnName] = reader.col_values(2)[i + 1]
+                    #===============================================================================================================
+
             sendings.append(sending)
 
     return(sendings)
@@ -170,9 +175,9 @@ def getReceivingInfo():
 
         reader = readExcelAtSheet(excelProductReceivedPath + "/" + excelFile, 0)
 
-        for i in range(len(reader.col_values(0)) - 1 + columnBias):
+        for i in range(len(reader.col_values(0)) - 1 + receivingFooterBias - receivingHeaderBias):
             #pull using informations from excel to python list (Only DeliveryCode and it's COD)
-            receivingDict[str(reader.col_values(columnNumberDeliveryCode_receiving)[i + 1])] = reader.col_values(columnNumberActualCOD)[i + 1]
+            receivingDict[str(reader.col_values(columnNumberDeliveryCode_receiving)[i + 1 + receivingHeaderBias])] = reader.col_values(columnNumberActualCOD)[i + 1 + receivingHeaderBias]
 
     return(receivingDict)
 
@@ -200,15 +205,25 @@ def appendSendingInfo(path, sendings, sheetName):
 
     startRow = len(reader.col_values(0)) + 1 #for "OpenPyXl" format
 
+    #=================================================================================================================================================================
+    # Unique Statement | cuz don't use all data in excel | so just fix the column.
+    #=================================================================================================================================================================
     for i in range(len(sendings)):
-        reportRecorder[Number_of_cell_alphabet(columnNumberSendingDate + 1) + str(startRow + i)] = sendings[i].sendingDate
-        reportRecorder[Number_of_cell_alphabet(columnNumberDeliveryCode_sending + 1) + str(startRow + i)] = sendings[i].deliveryCode
-        reportRecorder[Number_of_cell_alphabet(columnNumberExpectedCOD + 1) + str(startRow + i)] = sendings[i].expectedCOD
+        reportRecorder["A" + str(startRow + i)] = sendings[i].sendingDate
+        reportRecorder["B" + str(startRow + i)] = sendings[i].deliveryCode
+        reportRecorder["D" + str(startRow + i)] = sendings[i].expectedCOD
         
         if len(listOfAdditionalColumnName) > 0:
 
+            # for columnName in listOfAdditionalColumnName:
+            #     reportRecorder["C" + str(startRow + i)] = sendings[i].customerInfoDict[columnName]
+
             for columnName in listOfAdditionalColumnName:
-                reportRecorder[Number_of_cell_alphabet(additionalInfoColumnNumberDict[columnName] + 1) + str(startRow + i)] = sendings[i].customerInfoDict[columnName]
+                if columnName == "customerName":
+                    reportRecorder["C" + str(startRow + i)] = sendings[i].customerInfoDict[columnName]
+                elif columnName == "phoneNumber":
+                    reportRecorder["F" + str(startRow + i)] = sendings[i].customerInfoDict[columnName]
+    #=================================================================================================================================================================
 
     reportWorkbook.save(path)
 
@@ -289,19 +304,25 @@ def trackCOD():
 
 def createRemainingReceivingFile():
     
-    copyfile(reportTemplatePath, remainReceivingFilePath)
+    copyfile(remainingReportTemplatePath, remainReceivingFilePath)
 
     reportWorkbook = load_workbook(remainReceivingFilePath)      #for [openpyxl] libraly
     reportRecorder = reportWorkbook.active
 
-    for i in range(len(remainingReceivingDict)):
-        reportRecorder[Number_of_cell_alphabet(columnNumberDeliveryCode_sending + 1) + str(i + 2)] = list(remainingReceivingDict)[i]
-        reportRecorder[Number_of_cell_alphabet(columnNumberExpectedCOD + 1) + str(i + 2)] = remainingReceivingDict[list(remainingReceivingDict)[i]]
-    #===================================================================================================================================
-    # Unique Statement | use for add 1 row to make structure like receiving files.
-    #===================================================================================================================================
-    reportRecorder[Number_of_cell_alphabet(4) + str(len(remainingReceivingDict) + 2)] = "COD-Tracker"
-    #===================================================================================================================================
+    #========================================================================
+    # Unique Statement | make structure like receiving files.
+    #========================================================================
+    for i in range(receivingHeaderBias):
+        reportRecorder[Number_of_cell_alphabet(3) + str(i + 2)] = "."
+
+    for i in range(len(remainingReceivingDict) - receivingFooterBias):
+
+        if i <= len(remainingReceivingDict) - 1:
+            reportRecorder[Number_of_cell_alphabet(columnNumberDeliveryCode_receiving + 1) + str(i + 2 + receivingHeaderBias)] = list(remainingReceivingDict)[i]
+            reportRecorder[Number_of_cell_alphabet(columnNumberActualCOD + 1) + str(i + 2 + receivingHeaderBias)] = remainingReceivingDict[list(remainingReceivingDict)[i]]
+        else:
+            reportRecorder[Number_of_cell_alphabet(3) + str(i + 2 + receivingHeaderBias)] = "."
+    #========================================================================
 
     reportWorkbook.save(remainReceivingFilePath)
 
@@ -336,6 +357,7 @@ excelReportPath = reportFolder + reportName
 excelBackup_ProductSendingPath = "source-code/ประวัติการดำเนินการ/1. ไฟล์วันที่-ส่งของ (Backup)"
 excelBackup_ProductReceivedPath = "source-code/ประวัติการดำเนินการ/2. ไฟล์วันที่-ลูกค้ารับของ (Backup)"
 reportTemplatePath = "source-code/python-code/support-files/เช็คยอด-COD.xlsx"
+remainingReportTemplatePath = "source-code/python-code/support-files/เช็คยอด-COD-คงเหลือ.xlsx"
 
 remainReceivingFilePath = excelProductReceivedPath + "/คงเหลือ.xlsx"
 
@@ -351,7 +373,7 @@ lightRed_fill = PatternFill(start_color='ffd6d6', end_color='ffd6d6', fill_type=
 # Column Settings for sending files.
 columnNumberSendingDate = 0
 columnNumberDeliveryCode_sending = 2
-columnNumberExpectedCOD = 16
+columnNumberExpectedCOD = 9
 
 # Column Settings for receiving files.
 columnNumberDeliveryCode_receiving = 2
@@ -359,21 +381,27 @@ columnNumberActualCOD = 6
 
 # Addition Infomation : up to each project.
 
-listOfAdditionalColumnName = ["customerName"]
+listOfAdditionalColumnName = ["customerName", "phoneNumber"]
 
 additionalInfoColumnNumberDict = {
-    listOfAdditionalColumnName[0] : 3
+    listOfAdditionalColumnName[0] : 3,
+    listOfAdditionalColumnName[1] : 4
 }
 additionalInfoValueDict = {
-    listOfAdditionalColumnName[0] : "default-value"
+    listOfAdditionalColumnName[0] : "default-value",
+    listOfAdditionalColumnName[1] : "default-value"
 }
 
-columnBias = -1 #from summary cash (excel structure).
+sendingColumnBias = -1 #from summary cash (excel structure - footer).
+
+receivingHeaderBias = 12 #for delivery header
+receivingFooterBias = -14 #for delivery footer
+
 #--------------------------------------------------------
 # Implementation
 #--------------------------------------------------------
 logInfo("intro")
-sendings = getSendingInfo(excelProductSendingPath, columnBias)
+sendings = getSendingInfo(excelProductSendingPath, sendingColumnBias)
 receivingDict = getReceivingInfo()
 updateReport()
 sendingDatabase = getSendingInfo(reportFolder, 0) #re-use this function, so have some wired structure.

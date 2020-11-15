@@ -15,7 +15,7 @@ class DeliveryInfo:
 
     def checkStatus(self):
 
-        if self.expectedCOD == self.actualCOD:
+        if float(self.expectedCOD) == float(self.actualCOD):
             self.status = "success-payment"
 
         else:
