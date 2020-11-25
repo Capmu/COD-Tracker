@@ -18,5 +18,8 @@ class DeliveryInfo:
         if float(self.expectedCOD) == float(self.actualCOD):
             self.status = "success-payment"
 
+        elif float(self.expectedCOD) == 0:
+            self.status = "non-COD"
+
         else:
             self.status = "invalid-COD"

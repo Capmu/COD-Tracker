@@ -263,6 +263,9 @@ def getPaymentList(paymentReceivingDict):
             if sending.status == "success-payment":
                 paidList.append(sending)
 
+            elif sending.status == "non-COD":
+                paidList.append(sending)
+
             elif sending.status == "invalid-COD":
                 invalidPaidList.append(sending)
             
@@ -292,9 +295,16 @@ def trackCOD():
             for columnNumber in range(lenOfHighLight):
                 reportRecorder[Number_of_cell_alphabet(columnNumber + 1) + str(i + 2)].fill = lightGreen_fill
         
+        elif sendingDatabase[i].status == "non-COD":
+            for columnNumber in range(lenOfHighLight):
+                reportRecorder[Number_of_cell_alphabet(columnNumber + 1) + str(i + 2)].fill = lightBlack_fill
+        
         elif sendingDatabase[i].status == "invalid-COD":
             for columnNumber in range(lenOfHighLight):
                 reportRecorder[Number_of_cell_alphabet(columnNumber + 1) + str(i + 2)].fill = lightRed_fill
+        
+        else:
+            print(sendingDatabase[i].status)
 
     reportWorkbook.save(excelReportPath)
 
@@ -365,6 +375,7 @@ databaseSheetName = "รวม"
 
 lightGreen_fill = PatternFill(start_color='d3ffd1', end_color='d3ffd1', fill_type='solid')
 lightRed_fill = PatternFill(start_color='ffd6d6', end_color='ffd6d6', fill_type='solid')
+lightBlack_fill = PatternFill(start_color='2c2932', end_color='2c2932', fill_type='solid')
 
 #========================================================
 # Configuration
