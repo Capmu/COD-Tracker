@@ -15,7 +15,7 @@ class DeliveryInfo:
 
     def checkStatus(self):
 
-        if float(self.expectedCOD) == float(self.actualCOD):
+        if float(self.expectedCOD) == float(self.actualCOD) and self.expectedCOD != 0:
             self.status = "success-payment"
 
         elif float(self.expectedCOD) == 0:
@@ -23,3 +23,11 @@ class DeliveryInfo:
 
         else:
             self.status = "invalid-COD"
+    
+    def defaultSetting(self):
+        
+        self.sendingDate = "DEFAULT-SENDING-DATE"
+        self.deliveryCode = "DEFAULT-DELIVERY-CODE"
+        self.expectedCOD = 0
+        self.actualCOD = 0
+        self.status = "DEFAULT-STATUS"

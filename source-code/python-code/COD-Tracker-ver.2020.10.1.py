@@ -272,7 +272,15 @@ def getPaymentList(paymentReceivingDict):
             paymentReceivingDict.pop(sending.deliveryCode)
         
         else:
-            nonPaidList.append(sending)
+
+            sending.checkStatus()
+
+            if sending.status == "non-COD":
+                paidList.append(sending)
+
+            else:
+                sending.defaultSetting()
+                nonPaidList.append(sending)
 
     remainingReceivingDict = paymentReceivingDict
 
@@ -297,15 +305,12 @@ def trackCOD():
         
         elif sendingDatabase[i].status == "non-COD":
             for columnNumber in range(lenOfHighLight):
-                reportRecorder[Number_of_cell_alphabet(columnNumber + 1) + str(i + 2)].fill = lightBlack_fill
+                reportRecorder[Number_of_cell_alphabet(columnNumber + 1) + str(i + 2)].fill = DarkOcean_fill
         
         elif sendingDatabase[i].status == "invalid-COD":
             for columnNumber in range(lenOfHighLight):
                 reportRecorder[Number_of_cell_alphabet(columnNumber + 1) + str(i + 2)].fill = lightRed_fill
         
-        else:
-            print(sendingDatabase[i].status)
-
     reportWorkbook.save(excelReportPath)
 
     print(" -> checked.\n")
@@ -375,7 +380,7 @@ databaseSheetName = "รวม"
 
 lightGreen_fill = PatternFill(start_color='d3ffd1', end_color='d3ffd1', fill_type='solid')
 lightRed_fill = PatternFill(start_color='ffd6d6', end_color='ffd6d6', fill_type='solid')
-lightBlack_fill = PatternFill(start_color='2c2932', end_color='2c2932', fill_type='solid')
+DarkOcean_fill = PatternFill(start_color='478583', end_color='478583', fill_type='solid')
 
 #========================================================
 # Configuration
