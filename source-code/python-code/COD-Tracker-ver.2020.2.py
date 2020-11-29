@@ -1,11 +1,10 @@
 '''
     project   : CPMU-X001 : COD-Tracker
-    version   : 2020.10.1
+    version   : 2020.2
     developer : Capmu
 
     Unique Statement
-        - line(139) : Convert float to date.
-        - line(307) : Add footer.
+        . . .
 '''
 
 #--------------------------------------------------------
