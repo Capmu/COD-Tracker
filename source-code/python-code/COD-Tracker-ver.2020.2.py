@@ -3,7 +3,7 @@
     version   : 2020.2
     developer : Capmu
 
-    Unique Statement
+    description
         . . .
 '''
 
@@ -25,7 +25,7 @@ import logging
 #---------------------------------------------
 # Settings / Configurations
 #---------------------------------------------
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 #--------------------------------------------------------
 # Fucntions
@@ -494,5 +494,5 @@ updateReport()
 sendingDatabase = getSendingInfo(reportFolder, 0) #re-use this function, so have some wired structure.
 paidList, nonPaidList, remainingReceivingDict = getPaymentList(receivingDict)
 trackCOD()
-#moveUsedFiles()
+moveUsedFiles()
 logInfo("outro")
