@@ -13,6 +13,7 @@
 from Classes.DeliveryInfo import DeliveryInfo
 
 import os
+import sys
 import xlrd
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import PatternFill
@@ -131,7 +132,7 @@ def excelFilter(files):
     for file in files:
         
         if file[-5:] != ".xlsx" and file[-4:] != ".xls":
-            methodLog.error("Found a file that is not an excel : " + file + "\n")
+            methodLog.debug("Found a file that is not an excel : " + file + "\n")
         else:
             excelFiles.append(file)
     
@@ -385,6 +386,47 @@ def moveUsedFiles():
 
     return()
 
+def samilarVerification(sendDir, receiveDir, sendDirBackup, receiveDirBackup):
+
+    trigger = False
+    order = "default"
+    
+    sendingFiles = excelFilter(getAllFileNameAtPath(sendDir))
+    receivingFiles = removeRemainingFileFromList(excelFilter(getAllFileNameAtPath(receiveDir)))
+    inputFiles = sendingFiles + receivingFiles
+
+    sendingFilesBackup = excelFilter(getAllFileNameAtPath(sendDirBackup))
+    receivingFilesBackup = excelFilter(getAllFileNameAtPath(receiveDirBackup))
+    backupFiles = sendingFilesBackup + receivingFilesBackup
+
+    for inputFile in inputFiles:
+
+        if inputFile in backupFiles:
+
+            print("Executed file : " + inputFile)
+            print("---------------------------------------------------------------------")
+            trigger = True
+        
+    if trigger:
+
+        while order != 'y' and order != 'n':
+            order = input("Do you want to run the program with executed file(s) ? ------> (y/n) : ")
+            print("\n")
+        
+    if order == 'y' or order == "default":
+        pass
+    elif order == 'n':
+        sys.exit()
+    else:
+        methodLog.error("incorrect order character !")
+
+def removeRemainingFileFromList(theList):
+    
+    if "คงเหลือ.xlsx" in theList:
+        theList.pop("คงเหลือ.xlsx")
+    
+    return theList
+
 #--------------------------------------------------------
 # Variables
 #--------------------------------------------------------
@@ -445,6 +487,7 @@ receivingFooterBias = -14 #for delivery footer
 # Implementation
 #--------------------------------------------------------
 logInfo("intro")
+samilarVerification(excelProductSendingPath, excelProductReceivedPath, excelBackup_ProductSendingPath, excelBackup_ProductReceivedPath)
 sendings = getSendingInfo(excelProductSendingPath, sendingColumnBias)
 receivingDict = getReceivingInfo()
 updateReport()
