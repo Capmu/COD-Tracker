@@ -19,6 +19,12 @@ from openpyxl.styles import PatternFill
 from shutil import copyfile, move
 import datetime
 import time
+import logging
+
+#---------------------------------------------
+# Settings / Configurations
+#---------------------------------------------
+logging.basicConfig(level=logging.DEBUG)
 
 #--------------------------------------------------------
 # Fucntions
@@ -113,14 +119,34 @@ def getAllFileNameAtPath(path):
         for files in filePath:
             pass
 
+    methodLog.debug("Discovered files : " + str(files) + "\n")
+
     return(files)
+
+def excelFilter(files):
+    
+    #suffixs = [".xlsx", ".xls"]
+    excelFiles=[]
+
+    for file in files:
+        
+        if file[-5:] != ".xlsx" and file[-4:] != ".xls":
+            methodLog.error("Found a file that is not an excel : " + file + "\n")
+        else:
+            excelFiles.append(file)
+    
+    if len(excelFiles) == 0:
+        methodLog.debug("There are not have any excel in : " + str(files) + "\n")
+
+    return(excelFiles)
 
 def readExcelAtSheet(path, sheetNumber):
     return(xlrd.open_workbook(path).sheet_by_index(sheetNumber)) #for [xlrd] library
 
 def getSendingInfo(path, bias):
 
-    excelFiles = getAllFileNameAtPath(path)
+    filesInDir = getAllFileNameAtPath(path)
+    excelFiles = excelFilter(filesInDir)
     sendings = []
     
     for excelFile in excelFiles:
@@ -167,7 +193,8 @@ def getSendingInfo(path, bias):
 
 def getReceivingInfo():
 
-    excelFiles = getAllFileNameAtPath(excelProductReceivedPath)
+    filesInDir = getAllFileNameAtPath(excelProductReceivedPath)
+    excelFiles = excelFilter(filesInDir)
     receivingDict = {}
 
     for excelFile in excelFiles:
@@ -361,6 +388,8 @@ def moveUsedFiles():
 #--------------------------------------------------------
 # Variables
 #--------------------------------------------------------
+methodLog = logging.getLogger("[method] |")
+
 reportName = "เช็คยอด-COD.xlsx"
 reportFolder = "3. ไฟล์เช็คยอด/"
 
@@ -422,5 +451,5 @@ updateReport()
 sendingDatabase = getSendingInfo(reportFolder, 0) #re-use this function, so have some wired structure.
 paidList, nonPaidList, remainingReceivingDict = getPaymentList(receivingDict)
 trackCOD()
-moveUsedFiles()
+#moveUsedFiles()
 logInfo("outro")
