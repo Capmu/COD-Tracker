@@ -1,1 +1,1 @@
-python source-code/python-code/COD-Tracker-ver.2020.2.py
+python source-code/python-code/COD-Tracker.py

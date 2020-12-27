@@ -423,7 +423,7 @@ def samilarVerification(sendDir, receiveDir, sendDirBackup, receiveDirBackup):
 def removeRemainingFileFromList(theList):
     
     if "คงเหลือ.xlsx" in theList:
-        theList.pop("คงเหลือ.xlsx")
+        theList.remove("คงเหลือ.xlsx")
     
     return theList
 
