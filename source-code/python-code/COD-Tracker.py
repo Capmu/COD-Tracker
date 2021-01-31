@@ -116,13 +116,12 @@ def displayInvalidPayment(invalidPayments):
     return()
 
 def getAllFileNameAtPath(path):
-    for filePath in os.walk(path): #full example --> for root, dirs, files in os.walk("./Checking File"):
-        for files in filePath:
-            pass
 
-    methodLog.debug("Discovered files : " + str(files) + "\n")
+    for filePath in os.walk(path):
+        for i, files in enumerate(filePath):
+            if i == 2:
 
-    return(files)
+                return files  # return when i = 0
 
 def excelFilter(files):
     
@@ -143,6 +142,22 @@ def excelFilter(files):
 
 def readExcelAtSheet(path, sheetNumber):
     return(xlrd.open_workbook(path).sheet_by_index(sheetNumber)) #for [xlrd] library
+
+def splitBillVersion(bills):
+
+    billVer1s = []
+    billVer2s = []
+
+    for bill in bills:
+        reader = load_workbook(excelProductReceivedPath + "/" + bill) 
+        if len(reader.sheetnames) == 1:
+            methodLog.debug('1 sheet  : ' + str(bill))
+            billVer1s.append(bill)
+        elif len(reader.sheetnames) == 2:
+            methodLog.debug('2 sheets : ' + str(bill))
+            billVer2s.append(bill)
+    
+    return billVer1s, billVer2s
 
 def getSendingInfo(path, bias):
 
@@ -196,15 +211,21 @@ def getReceivingInfo():
 
     filesInDir = getAllFileNameAtPath(excelProductReceivedPath)
     excelFiles = excelFilter(filesInDir)
+    excelVer1s, excelVer2s = splitBillVersion(excelFiles)
     receivingDict = {}
 
-    for excelFile in excelFiles:
-
+    # for version 1 (1 sheet)
+    for excelFile in excelVer1s:
         reader = readExcelAtSheet(excelProductReceivedPath + "/" + excelFile, 0)
-
         for i in range(len(reader.col_values(0)) - 1 + receivingFooterBias - receivingHeaderBias):
             #pull using informations from excel to python list (Only DeliveryCode and it's COD)
             receivingDict[str(reader.col_values(columnNumberDeliveryCode_receiving)[i + 1 + receivingHeaderBias])] = reader.col_values(columnNumberActualCOD)[i + 1 + receivingHeaderBias]
+
+    # for version 1 (2 sheets)
+    for excelFile in excelVer2s:
+        reader = readExcelAtSheet(excelProductReceivedPath + "/" + excelFile, 1)
+        for i in range(len(reader.col_values(0)) - 1):
+            receivingDict[str(reader.col_values(2)[i + 1])] = reader.col_values(6)[i + 1]
 
     return(receivingDict)
 
